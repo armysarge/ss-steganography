@@ -17,6 +17,8 @@ A powerful steganography application that allows hiding and retrieving messages 
 - Support for various image formats (PNG, JPG, BMP)
 - Resistance to common steganalysis techniques
 - Message encryption before embedding for added security
+- Reed-Solomon error correction for data integrity
+- Pseudorandom distribution of data across image pixels
 
 ## Building an Executable
 

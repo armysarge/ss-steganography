@@ -10,16 +10,20 @@ import random
 import hashlib
 import struct
 import time
+import reedsolo
 
 class AdvancedSteganography:
     """
     A class implementing steganography techniques with reliable
     encoding and decoding of messages in images.
     """
-
     def __init__(self):
         self.marker = b'SSSTEGO'  # Marker to identify our encoding
         self.debug = False  # Set to True to enable debug prints
+
+        # Initialize Reed-Solomon error correction
+        # Use 10 error correction symbols which can correct up to 5 errors
+        self.ecc_symbols = 10
 
     def _log(self, message):
         """Print debug messages if debugging is enabled"""
@@ -62,12 +66,15 @@ class AdvancedSteganography:
 
         # Get image data as a numpy array
         img_array = np.array(img, dtype=np.uint8)
-        height, width, _ = img_array.shape
-
-        # Create message payload with fixed header format for easier detection
-        # Format: MARKER + LENGTH(4 bytes) + DATA
+        height, width, _ = img_array.shape        # Create message payload with fixed header format for easier detection
+        # Format: MARKER + LENGTH(4 bytes) + DATA + ECC
         message_data = message.encode()
-        message_bytes = self.marker + struct.pack("<I", len(message_data)) + message_data
+
+        # Apply Reed-Solomon error correction to the message data
+        rs = reedsolo.RSCodec(self.ecc_symbols)
+        encoded_data = rs.encode(message_data)
+
+        message_bytes = self.marker + struct.pack("<I", len(message_data)) + encoded_data
 
         # Check if the image is large enough for the message
         required_bits = len(message_bytes) * 8
@@ -285,19 +292,33 @@ class AdvancedSteganography:
                         for j in range(8):
                             if extracted_bits[i + j]:
                                 byte |= (1 << j)
-                        all_bytes.append(byte)
-
-                # Skip the header and extract just the message data
+                        all_bytes.append(byte)                # Skip the header and extract just the message data with error correction
                 if len(all_bytes) >= total_bytes_needed:
-                    message_data = all_bytes[header_size:header_size+message_length]
+                    encoded_data = all_bytes[header_size:header_size+message_length+self.ecc_symbols]
 
-                    # Try to decode as UTF-8 text
+                    # Apply Reed-Solomon error correction to decode the message
+                    rs = reedsolo.RSCodec(self.ecc_symbols)
                     try:
-                        return message_data.decode('utf-8')
-                    except UnicodeDecodeError:
-                        self._log("Failed to decode as UTF-8")
-                        # Return as base64 if not valid UTF-8
-                        return base64.b64encode(message_data).decode('ascii')
+                        # Attempt to decode with error correction
+                        corrected_data = rs.decode(encoded_data)
+                        self._log(f"Error correction applied successfully")
+
+                        # Try to decode as UTF-8 text
+                        try:
+                            return corrected_data.decode('utf-8')
+                        except UnicodeDecodeError:
+                            self._log("Failed to decode as UTF-8")
+                            # Return as base64 if not valid UTF-8
+                            return base64.b64encode(corrected_data).decode('ascii')
+                    except reedsolo.ReedSolomonError as e:
+                        self._log(f"Error correction failed: {str(e)}")
+                        # If error correction fails, try to decode without it as a fallback
+                        try:
+                            message_data = encoded_data[:message_length]
+                            return message_data.decode('utf-8')
+                        except UnicodeDecodeError:
+                            self._log("Failed to decode as UTF-8 after error correction failure")
+                            return None
                 else:
                     self._log(f"Not enough bytes extracted: {len(all_bytes)} < {total_bytes_needed}")
             else:
