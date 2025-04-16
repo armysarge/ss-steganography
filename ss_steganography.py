@@ -24,6 +24,9 @@ class SteganographyApp:
         self.root.geometry("800x600")
         self.root.resizable(True, True)
 
+        # Center the window on screen
+        self._center_window()
+
         # Set application icon if available
         try:
             self.root.iconbitmap("icon.ico")
@@ -45,10 +48,28 @@ class SteganographyApp:
         self._setup_dark_theme()
 
         # Create the UI
-        self._create_ui()
-
-        # Thread for background operations
+        self._create_ui()        # Thread for background operations
         self.working_thread = None
+
+    def _center_window(self):
+        """Center the application window on the screen."""
+        # Wait for the window to be drawn before calculating positions
+        self.root.update_idletasks()
+
+        # Get screen width and height
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        # Get window width and height
+        window_width = self.root.winfo_width()
+        window_height = self.root.winfo_height()
+
+        # Calculate position coordinates
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+
+        # Set window position
+        self.root.geometry(f"+{x}+{y}")
 
     def _setup_dark_theme(self):
         """Configure dark theme colors and styles."""
