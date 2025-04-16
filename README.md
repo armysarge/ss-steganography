@@ -18,6 +18,24 @@ A powerful steganography application that allows hiding and retrieving messages 
 - Resistance to common steganalysis techniques
 - Message encryption before embedding for added security
 
+## Building an Executable
+
+The project includes a build script to create a standalone executable:
+
+```bash
+# On Windows, simply run the build.bat script
+.\build.bat
+
+# Or with specific options
+.\build.bat --no-onefile
+```
+
+Available build options:
+- `--clean-only`: Only clean build directories without building
+- `--no-onefile`: Create a directory instead of a single executable
+
+The built executable will be available in the `dist` directory after a successful build.
+
 ## Requirements
 
 - Python 3.8+

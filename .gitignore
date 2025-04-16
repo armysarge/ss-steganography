@@ -21,6 +21,9 @@ var/
 *.egg
 *.gguf
 *.pdf
+obfuscated/
+dist/
+*.spec
 
 # Virtual Environment
 venv/
